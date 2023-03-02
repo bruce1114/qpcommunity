@@ -107,10 +107,9 @@ public:
     void computeDegree();
     void computeWPTque(vector<int>& timeList,int sigma,int percent,unordered_set<WEDS,hashWEDS>& holdSet);//这两个候选集实现方法不同
     void computeWPTset(vector<int>& timeList,int sigma,int percent,unordered_set<WEDS,hashWEDS>& holdSet);//这两个候选集实现方法不同
-    void computeWPTAmir(vector<int>& timeList,int sigma,int percent,unordered_set<WEDS,hashWEDS>& holdSet);
+    void computeWPTOracle(vector<int>& timeList,int sigma,int percent,unordered_set<WEDS,hashWEDS>& holdSet);
     void computeWPTEDS(vector<int>& timeList,int kval,int sigma,int percent,unordered_set<WEDS,hashWEDS>& holdSet,unordered_map<int,int>& cntTimesOfTime);//percent=0时适用
-    void buildLwithDlist(int percent,vector<int>& timeSeq,vector<int>& dList,unordered_map<int,vector<pair<int,pair<int,int> > > >& theL);
-    void buildLnaive(int percent,vector<int>& timeSeq,unordered_map<int,vector<pair<int,pair<int,int> > > >& theL);
+    void buildOracle(int percent,vector<int>& timeSeq,unordered_map<int,vector<pair<int,pair<int,int> > > >& theL);
     void getAnsFrmLnoRepeat(unordered_map<int,vector<pair<int,pair<int,int> > > >& theL,int sigma,vector<int>& timeSeq,unordered_set<WEDS,hashWEDS>& holdSet);
     void updateMaxLengthRev(int startNode,vector<int>& positionInSingleL,vector<int>& positionInSingleRevL,vector<pair<int,pair<int, int>>>& singleRevL,vector<int>& maxLengthRev,vector<int>& maxLength);
     void getPartAnsViaDfs(int start,int needLen,vector<int>& timeSeq,vector<pair<int,pair<int,int> > >& theDAG,vector<int>& thePosInDAG,vector<int>& theMaxLength,vector<int>& curPath,vector<vector<int> >& partAns);
@@ -148,7 +147,6 @@ public:
     void reportsize();
     void reportdevalidsize(int kval);
     void reportstaticsize();
-    void showActiveList(vector<int>& timeList,int percent);
     void getAnsFrmLwithRepeat(unordered_map<int,vector<pair<int,pair<int,int> > > >& theL,int sigma,vector<int>& timeSeq,unordered_set<WEDS,hashWEDS>& holdSet);
     void getAnsFrmLwithOptimize(unordered_map<int,vector<pair<int,pair<int,int> > > >& theL,int sigma,vector<int>& timeSeq,unordered_set<WEDS,hashWEDS>& holdSet);
 
@@ -353,36 +351,6 @@ void Tempgraph::reportstaticsize(){
     }
     cerr<<"totalnode: "<<totalnode<<endl;
     cerr<<"totaledge: "<<totaledge<<endl;
-}
-
-void Tempgraph::showActiveList(vector<int>& timeList,int percent){
-    unordered_map<int,vector<pair<int,pair<int,int> > > > L;//pair<int,pair<int,int> >意思是timestamp的下标和它的activate区间（下标表示）
-    //获得D(S)
-    vector<int> dList;//只用于buildLwithDlist
-    for(int i=0;i+1<timeList.size();++i){
-        for(int j=i+1;j<timeList.size();++j){
-            int theDiff=timeList[j]-timeList[i];
-            if(L.find(theDiff)==L.end()){
-                dList.push_back(theDiff);
-                L[theDiff]=vector<pair<int,pair<int,int> > >();
-            }
-        }
-    }
-
-    sort(dList.begin(),dList.end());
-    buildLwithDlist(percent,timeList,dList,L);
-
-
-    unordered_map<int,vector<pair<int,pair<int,int> > > >::iterator it=L.begin();
-    while(it!=L.end()){
-        cout<<it->first<<": ";
-        const vector<pair<int,pair<int,int> > >& line=it->second;
-        for(int i=0;i<line.size();++i){
-            cout<<"("<<line[i].first<<","<<line[i].second.first<<","<<line[i].second.second<<"),";
-        }
-        cout<<endl;
-        it++;
-    }
 }
 
 void Tempgraph::reportTransformedGraph(){
@@ -593,11 +561,11 @@ void Tempgraph::computeSingleWPTdirect(int nodeId,int sigma,int percent,int kval
     computeTime++;
     // cout<<availableTimeset.size()<<endl;
 
-    // computeWPTAmir(availableTimeset,sigma,percent,ans);
+    // computeWPTOracle(availableTimeset,sigma,percent,ans);
     // computeWPTque(availableTimeset,sigma,percent,ans);
     // computeWPTset(availableTimeset,sigma,percent,ans);
-    #ifdef amir
-    computeWPTAmir(availableTimeset,sigma,percent,ans);
+    #ifdef oracle
+    computeWPTOracle(availableTimeset,sigma,percent,ans);
     #endif
     #ifdef candque
     computeWPTque(availableTimeset,sigma,percent,ans);
@@ -1120,9 +1088,6 @@ void Tempgraph::MPCO_direct_1(int kval,int sigma,int percent,vector<pair<WEDS,ve
     unordered_map<WEDS,unordered_set<int>,hashWEDS> inLayerConnect;
     // unordered_set<int> deleted;
     for(int i=0;i<leftNodeAndDegree.size();++i){
-        // #ifdef countcore
-        // if(i%1000==0) cout<<i<<" over "<<leftNodeAndDegree.size()<<endl;
-        // #endif
         int nownode=leftNodeAndDegree[i].second;
         if(validv[nownode]==false) continue;
 
@@ -1131,12 +1096,7 @@ void Tempgraph::MPCO_direct_1(int kval,int sigma,int percent,vector<pair<WEDS,ve
 
         unordered_set<WEDS,hashWEDS>::iterator it=curSet.begin();
         while(it!=curSet.end()){
-
-
             if(inLayerConnect.find(*it)!=inLayerConnect.end()&&inLayerConnect[*it].find(nownode)!=inLayerConnect[*it].end()){
-                #ifdef qpcg_rule2_cnt
-                cnt_rule2++;
-                #endif
                 it++;
                 continue;
             }
@@ -1173,13 +1133,8 @@ void Tempgraph::MPCO_direct_1(int kval,int sigma,int percent,vector<pair<WEDS,ve
                     pair<int,int> neighbor=adjList[curnode][j];
                     if(validv[neighbor.first]==false) continue;
                     if(inLayerConnect[*it].find(neighbor.first)!=inLayerConnect[*it].end()) continue;
-                    #ifdef cntCheckEdgeLayer
-                    cntcheck++;
-                    #endif
 
                     if(checkWEDSinTimelist(*it,edgePool[neighbor.second])==false){
-
-
                         continue;
                     }
 
@@ -1192,18 +1147,6 @@ void Tempgraph::MPCO_direct_1(int kval,int sigma,int percent,vector<pair<WEDS,ve
                 }
             }
 
-
-            #ifdef directcoreTotaltime
-            // gettimeofday(&start,NULL);
-            #endif
-
-            #ifndef countcore
-            vector<int> holdCore;
-            connectgraph.enumKCore(kval,holdCore);
-            if(holdCore.size()>0) ans.push_back(pair<WEDS,vector<int>>(*it,holdCore));
-            #endif
-
-            #ifdef countcore
             vector<vector<int>> holdCore;
             connectgraph.enumKCores(kval,holdCore);
             if(holdCore.size()>0){
@@ -1211,29 +1154,7 @@ void Tempgraph::MPCO_direct_1(int kval,int sigma,int percent,vector<pair<WEDS,ve
                     ans.push_back(pair<WEDS,vector<int>>(*it,holdCore[j]));
                 }
             }
-            #endif
             
-
-
-
-            // if(visitlayer.find(*it)==visitlayer.end()){
-            //     visitlayer.insert(*it);
-            //     Staticgraph layergraph;
-            //     for(int j=i;j<leftNodeAndDegree.size();++j){
-            //         int curnode=leftNodeAndDegree[j].second;
-            //         if(validv[curnode]==false) continue;
-
-            //         for(int k=0;k<adjList[curnode].size();++k){
-            //             int nei=adjList[curnode][k].first;
-            //             if(nei<curnode||validv[nei]==false) continue;
-            //             if(checkWEDSinTimelist(*it,edgePool[adjList[curnode][k].second])==false) continue;
-            //             layergraph.addedge(curnode,nei);
-            //         }
-            //     }
-            //     vector<int> holdCore;
-            //     layergraph.enumKCore(kval,holdCore);
-            //     if(holdCore.size()>0) ans.push_back(pair<WEDS,vector<int>>(*it,holdCore));
-            // }
             it++;
         }
 
@@ -1415,7 +1336,6 @@ void Tempgraph::MPC_WPN(int kval,int sigma,int percent){
     gettimeofday(&start,NULL);
     WPNCluster(sigma,percent,kval,nodeToWPT,nodeToIWPT,nodeToKeyTimeDegree);
     gettimeofday(&end,NULL);
-    cerr<<"wpncluster time: "<<(end.tv_sec-start.tv_sec)*1000+(end.tv_usec-start.tv_usec)/1000<<endl;
     #ifdef REPORT
     reportdevalidsize(kval);
     #endif
@@ -1427,7 +1347,6 @@ void Tempgraph::MPC_WPN(int kval,int sigma,int percent){
     gettimeofday(&start,NULL);
     transformByNode(kval,sigma,nodeToWPT);
     gettimeofday(&end,NULL);
-    cerr<<"trans graph time: "<<(end.tv_sec-start.tv_sec)*1000+(end.tv_usec-start.tv_usec)/1000<<endl;
     #ifdef REPORT
     reportstaticsize();
     #endif
@@ -1440,11 +1359,12 @@ void Tempgraph::MPC_WPN(int kval,int sigma,int percent){
 
 void Tempgraph::computefixLenPkcores(int kval,vector<pair<WEDS,vector<int>>>& fixlenPkcores){
     for(int i=0;i<cntlayers;++i){
-        fixlenPkcores.push_back(pair<WEDS,vector<int>>());
-        fixlenPkcores[fixlenPkcores.size()-1].first=layerToWEDS[i];
-        staticGraphs[i].enumKCore(kval,fixlenPkcores[fixlenPkcores.size()-1].second);
-        if(fixlenPkcores[fixlenPkcores.size()-1].second.size()==0){
-            fixlenPkcores.pop_back();
+        vector<vector<int>> holdCore;
+        staticGraphs[i].enumKCores(kval,holdCore);
+        if(holdCore.size()>0){
+            for(int j=0;j<holdCore.size();++j){
+                fixlenPkcores.push_back(pair<WEDS,vector<int>>(layerToWEDS[i],holdCore[j]));
+            }
         }
     }
 }
@@ -1695,9 +1615,6 @@ void Tempgraph::transformByNode(int kval,int sigma,unordered_map<int,unordered_s
             }
         }
     }
-
-    //debug
-    cerr<<"total static layer: "<<cntlayers<<endl;
 }
 
 bool isPeriodic(WEDS& pre,WEDS& suc,int percent){
@@ -2011,8 +1928,8 @@ void Tempgraph::computeSingleWPT(int nodeId,int sigma,int percent,int kval,unord
     //     cout<<endl;
     // }
 
-    #ifdef amir
-    computeWPTAmir(availableTimeset,sigma,percent,curSet);
+    #ifdef oracle
+    computeWPTOracle(availableTimeset,sigma,percent,curSet);
     #endif
     #ifdef candque
     computeWPTque(availableTimeset,sigma,percent,curSet);
@@ -2697,12 +2614,6 @@ void Tempgraph::getAnsFrmLnoRepeat(unordered_map<int,vector<pair<int,pair<int,in
                         // }
                     }
                 }
-
-                //debug
-                #ifdef combine_time
-                gettimeofday(&end,NULL);
-                tempcnt+=(end.tv_sec-start.tv_sec)*1000+(end.tv_usec-start.tv_usec)/1000;
-                #endif
             }
 
             //删掉当前keypath//其实可以判断一下是不是一定删，最坏情况是一定删
@@ -2773,14 +2684,9 @@ void Tempgraph::getAnsFrmLnoRepeat(unordered_map<int,vector<pair<int,pair<int,in
 
         it++;
     }
-
-    //debug
-    #ifdef combine_time
-    cout<<"combine time: "<<tempcnt<<endl;
-    #endif
 }
 
-void Tempgraph::computeWPTAmir(vector<int>& timeList,int sigma,int percent,unordered_set<WEDS,hashWEDS>& holdSet){
+void Tempgraph::computeWPTOracle(vector<int>& timeList,int sigma,int percent,unordered_set<WEDS,hashWEDS>& holdSet){
 
     if(timeList.size()<sigma) return;
 
@@ -2789,38 +2695,15 @@ void Tempgraph::computeWPTAmir(vector<int>& timeList,int sigma,int percent,unord
     #endif
 
     unordered_map<int,vector<pair<int,pair<int,int> > > > L;//pair<int,pair<int,int> >意思是timestamp的下标和它的activate区间（下标表示）
-    //获得D(S)
-    vector<int> dList;//只用于buildLwithDlist
-    for(int i=0;i+1<timeList.size();++i){
-        for(int j=i+1;j<timeList.size();++j){
-            int theDiff=timeList[j]-timeList[i];
-            if(L.find(theDiff)==L.end()){
-                dList.push_back(theDiff);
-                L[theDiff]=vector<pair<int,pair<int,int> > >();
-            }
-        }
-    }
-
-    #ifndef buildl_naive
-    sort(dList.begin(),dList.end());
-    buildLwithDlist(percent,timeList,dList,L);
-    #endif
     
-    #ifdef buildl_naive
     #ifdef build_oracle_time
     gettimeofday(&start,NULL);
     #endif
-    buildLnaive(percent,timeList,L);
+    buildOracle(percent,timeList,L);
     
     #ifdef build_oracle_time
     gettimeofday(&end,NULL);
     cout<<"build oracle time: "<<(end.tv_sec-start.tv_sec)*1000+(end.tv_usec-start.tv_usec)/1000<<endl;
-    #endif
-    #endif
-
-    //debug
-    #ifdef BAR
-    cerr<<"buildL done"<<endl;
     #endif
 
     getAnsFrmLnoRepeat(L,sigma,timeList,holdSet);
@@ -2829,7 +2712,7 @@ void Tempgraph::computeWPTAmir(vector<int>& timeList,int sigma,int percent,unord
 
 }
 
-void Tempgraph::buildLnaive(int percent,vector<int>& timeSeq,unordered_map<int,vector<pair<int,pair<int,int> > > >& theL){
+void Tempgraph::buildOracle(int percent,vector<int>& timeSeq,unordered_map<int,vector<pair<int,pair<int,int> > > >& theL){
     unordered_map<int,unordered_map<int,int>> lpos;
     unordered_set<int> dSet;
     for(int i=0;i<timeSeq.size()-1;++i){
@@ -2863,110 +2746,6 @@ void Tempgraph::buildLnaive(int percent,vector<int>& timeSeq,unordered_map<int,v
                         singleList[pos].second.second=j;
                     }
                 }
-            }
-        }
-    }
-}
-
-void Tempgraph::buildLwithDlist(int percent,vector<int>& timeSeq,vector<int>& dList,unordered_map<int,vector<pair<int,pair<int,int> > > >& theL){
-    //参数vector<int> dList主要在生成L时，不必要遍历dlist，而是二分查找到对应的dlist区间
-
-    for(int i=0;i<timeSeq.size()-1;++i){
-
-        //每个元素的phase 1
-        vector<pair<int,pair<Frac,int> > > diffRangeVec;//pair<int,pair<Frac,int>>指i到int(index)这个diff所拥有的d范围
-        for(int j=i+1;j<timeSeq.size();++j){
-            int actualDiff=timeSeq[j]-timeSeq[i];
-            diffRangeVec.push_back(pair<int,pair<Frac,int> >(j,pair<Frac,int>(Frac(actualDiff*100,100+percent),actualDiff)));//还没考虑分数的化简//但后面只用到了分数与整数的比较，风险较小
-        }
-
-        //每个元素的phase 2
-        vector<pair<pair<int,int>,pair<Frac,Frac> > > separateDiffRange;
-
-        //初始化
-        int firstRange=0,lastRange=1;
-        int firstRangeL,lastRangeR;
-        Frac l,r;
-        l=diffRangeVec[0].second.first;
-
-        while(lastRange<diffRangeVec.size()){
-            firstRangeL=diffRangeVec[firstRange].first;
-            lastRangeR=diffRangeVec[lastRange-1].first;
-
-            if(diffRangeVec[lastRange].second.first<=diffRangeVec[firstRange].second.second){
-                //有公共区间
-                r=diffRangeVec[lastRange].second.first;
-                lastRange++;
-            }else{
-                r=diffRangeVec[firstRange].second.second;
-                firstRange++;
-            }
-
-            separateDiffRange.push_back(pair<pair<int,int>,pair<Frac,Frac> >(pair<int,int>(firstRangeL,lastRangeR),pair<Frac,Frac>(l,r)));
-            l=r;
-
-            if(firstRange==lastRange){//与初始化时类似
-                lastRange++;
-                l=diffRangeVec[firstRange].second.first;
-            }
-        }
-
-        while(firstRange<lastRange){//收尾工作
-            r=diffRangeVec[firstRange].second.second;
-            separateDiffRange.push_back(pair<pair<int,int>,pair<Frac,Frac> >(pair<int,int>(diffRangeVec[firstRange].first,diffRangeVec[lastRange-1].first),pair<Frac,Frac>(l,r)));
-            l=r;
-            firstRange++;
-        }
-
-        //将phase 2的结果加入L里
-        int lastEnd=0;
-        for(int j=0;j<separateDiffRange.size();++j){
-            //获取左右整数边界
-            int leftLimit=separateDiffRange[j].second.first.getUp();
-            int rightLimit=separateDiffRange[j].second.second.getDown();
-
-            if(leftLimit>rightLimit) continue;
-
-            int leftLimitInDlist=lower_bound(dList.begin()+lastEnd,dList.end(),leftLimit)-dList.begin();
-            // int leftLimitInDlist=lower_bound(dList.begin(),dList.end(),leftLimit)-dList.begin();
-            if(leftLimitInDlist==dList.size()) break;
-            int rightLimitInDlist=upper_bound(dList.begin()+leftLimitInDlist,dList.end(),rightLimit)-dList.begin();
-            // int rightLimitInDlist=upper_bound(dList.begin(),dList.end(),rightLimit)-dList.begin();
-            rightLimitInDlist--;
-
-            lastEnd=rightLimitInDlist;
-            if(leftLimitInDlist>rightLimitInDlist) continue;//区间内部没有d
-
-            //判断左边界是否与上一个的右边界重合并且是否将左边界加入L，因为有可能上一个的右边界更符合
-            if(j>0&&separateDiffRange[j].second.first==dList[leftLimitInDlist]){
-                if(separateDiffRange[j-1].second.second==dList[leftLimitInDlist]){
-                    if(separateDiffRange[j].first.second>=separateDiffRange[j-1].first.second&&separateDiffRange[j].first.first<=separateDiffRange[j-1].first.first){
-                        theL[dList[leftLimitInDlist]].push_back(pair<int,pair<int,int> >(i,separateDiffRange[j].first));
-                    }
-                    leftLimitInDlist++;
-                }
-            }
-
-            if(leftLimitInDlist>rightLimitInDlist) continue;//原始区间中，上一个的尾巴等于下一个的头时形成的长度为1的区间//不全是这种
-
-            //对于中间的属于D(S)的整数，直接加入L
-            while(leftLimitInDlist<rightLimitInDlist){
-                theL[dList[leftLimitInDlist]].push_back(pair<int,pair<int,int> >(i,separateDiffRange[j].first));
-                leftLimitInDlist++;
-            }
-
-            //与上上段相似
-            if(j+1<separateDiffRange.size()&&separateDiffRange[j].second.second==dList[rightLimitInDlist]){
-                if(separateDiffRange[j+1].second.first==dList[rightLimitInDlist]){
-                    if(separateDiffRange[j].first.second>=separateDiffRange[j+1].first.second&&separateDiffRange[j].first.first<=separateDiffRange[j+1].first.first){
-                        theL[dList[rightLimitInDlist]].push_back(pair<int,pair<int,int> >(i,separateDiffRange[j].first));
-                    }
-                    leftLimitInDlist++;
-                }
-            }
-
-            if(leftLimitInDlist==rightLimitInDlist){//如果rightlimit不和下一个接壤，别忘了正规地处理rightlimit
-                theL[dList[leftLimitInDlist]].push_back(pair<int,pair<int,int> >(i,separateDiffRange[j].first));
             }
         }
     }
