@@ -76,6 +76,7 @@ public:
     void bk_pivot(unordered_set<int> cand,unordered_set<int> curclique,unordered_set<int> X,vector<unordered_set<int>>& holdcliques,int kval);
     void enumKCore(int kval,vector<int>& holdkcores);
     void enumKCores(int kval,vector<vector<int>>& holdkcores);
+    void enumKCoreEdges(int kval,vector<vector<pair<int,int>>>& holdkcores);
 
     //debug
     void reportself();
@@ -1147,6 +1148,21 @@ void Tempgraph::MPCO_direct_1(int kval,int sigma,int percent,vector<pair<WEDS,ve
                 }
             }
 
+            #ifdef coreedge
+            vector<vector<pair<int,int>>> holdCore;
+            connectgraph.enumKCoreEdges(kval,holdCore);
+            if(holdCore.size()>0){
+                for(int j=0;j<holdCore.size();++j){
+                    vector<int> edges;
+                    edges.reserve(holdCore[j].size()*2);
+                    for(int kk=0;kk<holdCore[j].size();++kk){
+                        edges.push_back(holdCore[j][kk].first);
+                        edges.push_back(holdCore[j][kk].second);
+                    }
+                    ans.push_back(pair<WEDS,vector<int>>(*it,edges));
+                }
+            }
+            #else
             vector<vector<int>> holdCore;
             connectgraph.enumKCores(kval,holdCore);
             if(holdCore.size()>0){
@@ -1154,6 +1170,7 @@ void Tempgraph::MPCO_direct_1(int kval,int sigma,int percent,vector<pair<WEDS,ve
                     ans.push_back(pair<WEDS,vector<int>>(*it,holdCore[j]));
                 }
             }
+            #endif
             
             it++;
         }
@@ -1359,6 +1376,21 @@ void Tempgraph::MPC_WPN(int kval,int sigma,int percent){
 
 void Tempgraph::computefixLenPkcores(int kval,vector<pair<WEDS,vector<int>>>& fixlenPkcores){
     for(int i=0;i<cntlayers;++i){
+        #ifdef coreedge
+        vector<vector<pair<int,int>>> holdCore;
+        staticGraphs[i].enumKCoreEdges(kval,holdCore);
+        if(holdCore.size()>0){
+            for(int j=0;j<holdCore.size();++j){
+                vector<int> edges;
+                edges.reserve(holdCore[j].size()*2);
+                for(int kk=0;kk<holdCore[j].size();++kk){
+                    edges.push_back(holdCore[j][kk].first);
+                    edges.push_back(holdCore[j][kk].second);
+                }
+                fixlenPkcores.push_back(pair<WEDS,vector<int>>(layerToWEDS[i],edges));
+            }
+        }
+        #else
         vector<vector<int>> holdCore;
         staticGraphs[i].enumKCores(kval,holdCore);
         if(holdCore.size()>0){
@@ -1366,6 +1398,7 @@ void Tempgraph::computefixLenPkcores(int kval,vector<pair<WEDS,vector<int>>>& fi
                 fixlenPkcores.push_back(pair<WEDS,vector<int>>(layerToWEDS[i],holdCore[j]));
             }
         }
+        #endif
     }
 }
 
@@ -1493,6 +1526,72 @@ void Staticgraph::enumKCore(int kval,vector<int>& holdkcores){
     it=adjlist.begin();
     while(it!=adjlist.end()){
         if(invalidv.find(it->first)==invalidv.end()) holdkcores.push_back(it->first);
+        it++;
+    }
+}
+
+void Staticgraph::enumKCoreEdges(int kval,vector<vector<pair<int,int>>>& holdkcores){
+    int nodecnt=adjlist.size();
+    unordered_map<int,int> degree;
+    unordered_set<int> invalidv;
+    unordered_map<int,vector<int>>::iterator it=adjlist.begin();
+    while(it!=adjlist.end()){
+        degree[it->first]=it->second.size();
+        it++;
+    }
+    queue<int> que;
+    it=adjlist.begin();
+    while(it!=adjlist.end()){
+        int curnode=it->first;
+        if(degree[curnode]<kval){
+            invalidv.insert(curnode);
+            que.push(curnode);
+        }
+        it++;
+    }
+
+    while(!que.empty()){
+        int nownode=que.front();que.pop();
+
+        for(int i=0;i<adjlist[nownode].size();++i){
+            int neighbor=adjlist[nownode][i];
+            if(invalidv.find(neighbor)!=invalidv.end()) continue;
+
+            degree[neighbor]=degree[neighbor]-1;
+            if(degree[neighbor]==kval-1){
+                invalidv.insert(neighbor);
+                que.push(neighbor);
+            }
+        }
+    }
+
+    unordered_set<int> added;
+    it=adjlist.begin();
+    while(it!=adjlist.end()){
+
+        if(invalidv.find(it->first)==invalidv.end()&&added.find(it->first)==added.end()){
+            // vector<int> thecore;
+            vector<pair<int,int>> thecore;
+            // thecore.push_back(it->first);
+            added.insert(it->first);
+
+            queue<int> que;
+            que.push(it->first);
+            while(!que.empty()){
+                int now=que.front();que.pop();
+                for(int i=0;i<adjlist[now].size();++i){
+                    if(invalidv.find(adjlist[now][i])==invalidv.end()){
+                        if(adjlist[now][i]>now) thecore.push_back(pair<int,int>(now,adjlist[now][i]));
+                        if(added.find(adjlist[now][i])==added.end()){
+                            added.insert(adjlist[now][i]);
+                            // thecore.push_back(adjlist[now][i]);
+                            que.push(adjlist[now][i]);
+                        }
+                    }
+                }
+            }
+            holdkcores.push_back(thecore);
+        }
         it++;
     }
 }

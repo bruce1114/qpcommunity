@@ -2,6 +2,7 @@
 // #define candset
 #define moretime
 #define outputans
+#define coreedge
 #include"head/def.hpp"
 
 void simpleOutput(vector<WEDS>& allpcliques){
@@ -14,6 +15,24 @@ void simpleOutput(vector<WEDS>& allpcliques){
         }
         // if(i!=allpcliques.size()-1) cout<<endl;
         cout<<endl;
+    }
+}
+
+void outputCoreEdge(vector<WEDS>& allpcores){
+    for(int i=0;i<allpcores.size();++i){
+        cout<<"t:"<<endl;
+        int j;
+        for(j=0;j<allpcores[i].timeList.size();++j){
+            int val=allpcores[i].timeList[j];
+            if(val==-1) break;
+            else if(j!=0) cout<<" ";
+            cout<<val;
+        }
+        ++j;
+        cout<<endl<<"e:"<<endl;
+        for(;j<allpcores[i].timeList.size();j+=2){
+            cout<<allpcores[i].timeList[j]<<" "<<allpcores[i].timeList[j+1]<<endl;
+        }
     }
 }
 
@@ -143,7 +162,9 @@ int main(int argc, char *argv[]){
                 WEDS combine=pcore.first;
                 combine.timeList.push_back(-1);
 
+                #ifndef coreedge
                 sort(pcore.second.begin(),pcore.second.end());
+                #endif
                 for(auto val:pcore.second){
                     combine.timeList.push_back(val);
                 }
@@ -153,7 +174,11 @@ int main(int argc, char *argv[]){
 
             sort(printans.begin(),printans.end());
 
+            #ifdef coreedge
+            outputCoreEdge(printans);
+            #else
             simpleOutput(printans);
+            #endif
             #endif
 
             return 0;
@@ -175,7 +200,9 @@ int main(int argc, char *argv[]){
                 WEDS combine=pcore.first;
                 combine.timeList.push_back(-1);
 
+                #ifndef coreedge
                 sort(pcore.second.begin(),pcore.second.end());
+                #endif
                 for(auto val:pcore.second){
                     combine.timeList.push_back(val);
                 }
@@ -185,7 +212,12 @@ int main(int argc, char *argv[]){
 
             sort(printans.begin(),printans.end());
 
+            #ifdef coreedge
+            outputCoreEdge(printans);
+            #else
             simpleOutput(printans);
+            #endif
+
             #endif
 
             return 0;
