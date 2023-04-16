@@ -21,8 +21,7 @@ Process above enables the DAG oracle based method. To switch to the basic method
 For MQPCore mining (and MQPClique mining), you may complile "main.cpp" first and run it with any datasets in "smalldatasets/smallgraphs":
 ```
 g++ main.cpp -o main -std=c++11
-./main
-test5 3 3 10 2 \*dataset, k, sigma, epsilon (%). 2 indicates that MQPCL-E(+) is invoked*\
+./main test5.csv 3 3 10 2 \* program, dataset, k, sigma, epsilon (%). 2 indicates that MQPCL-E(+) is invoked *\
 temporal graph size:
 total node: 7
 total edge in de-temporal graph: 12
@@ -30,10 +29,10 @@ total temporal edge: 46
 total time: 0
 total result: 5
 all pcliques:
-1 20 40 -1 2 3 5
-1 20 40 -1 3 4 5 6
-10 20 30 -1 3 5 6
-20 30 40 -1 2 3 5
-20 30 40 -1 3 5 6
+1 20 40 # 2 3 5
+1 20 40 # 3 4 5 6
+10 20 30 # 3 5 6
+20 30 40 # 2 3 5
+20 30 40 # 3 5 6
 ```
 For the 5-th parameter: 1-MQPCL-B(+), 2-MQPCL-E(+), 3-MQPCO-B(+), 4-MQPCO-E(+). Process above enables the DAG oracle based method. To switch to the basic method you may "#define candidate" rather than "#define oracle" at the top of "main.cpp".
