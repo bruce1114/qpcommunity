@@ -4,12 +4,26 @@
 #define outputans
 #include"head/def.hpp"
 
-int main(){
+void simpleOutput(vector<WEDS>& allpcliques){
+    for(int i=0;i<allpcliques.size();++i){
+        for(int j=0;j<allpcliques[i].timeList.size();++j){
+            int val=allpcliques[i].timeList[j];
+            if(val==-1) cout<<"#";
+            else cout<<val;
+            if(j!=allpcliques[i].timeList.size()-1) cout<<" ";
+        }
+        // if(i!=allpcliques.size()-1) cout<<endl;
+        cout<<endl;
+    }
+}
+
+int main(int argc, char *argv[]){
     // filename,kval,sigma,percent,wait
     string filename;
-    cin>>filename;
+    filename=argv[1];
+    // cin>>filename;
     // filename="smalldatasets/"+filename+".csv";
-    filename="smalldatasets/smallgraphs/"+filename+".csv";
+    filename="smalldatasets/smallgraphs/"+filename;
 
     struct timeval start,end,astart,aend;
     
@@ -22,11 +36,15 @@ int main(){
 
 
     int kval,sigma,percent;
-    cin>>kval>>sigma>>percent;
+    // cin>>kval>>sigma>>percent;
+    kval=stoi(argv[2]);
+    sigma=stoi(argv[3]);
+    percent=stoi(argv[4]);
 
 
     int wait=1;
-    cin>>wait;
+    // cin>>wait;
+    wait=stoi(argv[5]);
 
     gettimeofday(&astart,NULL);
     // gettimeofday(&start,NULL);
@@ -38,13 +56,13 @@ int main(){
             vector<Pcliques> fixLenPcliques;
             tgraph.computefixLenPcliques(kval,fixLenPcliques);
             gettimeofday(&end,NULL);
-            cout<<"total time: "<<(end.tv_sec-astart.tv_sec)*1000+(end.tv_usec-astart.tv_usec)/1000<<endl;
+            cerr<<"total time: "<<(end.tv_sec-astart.tv_sec)*1000+(end.tv_usec-astart.tv_usec)/1000<<endl;
             int totalres=0;
             for(int i=0;i<fixLenPcliques.size();++i) totalres+=fixLenPcliques[i].cliques.size();
-            cout<<"total result: "<<totalres<<endl;
+            cerr<<"total result: "<<totalres<<endl;
 
             #ifdef outputans
-            cout<<"all pcliques:"<<endl;
+            cerr<<"all pcliques:"<<endl;
             vector<WEDS> allpcliques;
             for(int i=0;i<fixLenPcliques.size();++i){
 
@@ -68,14 +86,7 @@ int main(){
             }
             sort(allpcliques.begin(),allpcliques.end());
 
-            for(int i=0;i<allpcliques.size();++i){
-                for(int j=0;j<allpcliques[i].timeList.size();++j){
-                    cout<<allpcliques[i].timeList[j];
-                    if(j!=allpcliques[i].timeList.size()-1) cout<<" ";
-                }
-                // if(i!=allpcliques.size()-1) cout<<endl;
-                cout<<endl;
-            }
+            simpleOutput(allpcliques);
             #endif
         }
     break;
@@ -86,12 +97,12 @@ int main(){
             // tgraph.MPC_direct_firstlayer(kval,sigma,percent,fixlenAns);
 
             gettimeofday(&end,NULL);
-            cout<<"total time: "<<(end.tv_sec-astart.tv_sec)*1000+(end.tv_usec-astart.tv_usec)/1000<<endl;
+            cerr<<"total time: "<<(end.tv_sec-astart.tv_sec)*1000+(end.tv_usec-astart.tv_usec)/1000<<endl;
             // cout<<"total fixlenpclique number: "<<fixlenAns.size()<<endl;
-            cout<<"total result: "<<fixlenAns.size()<<endl;
+            cerr<<"total result: "<<fixlenAns.size()<<endl;
 
             #ifdef outputans
-            cout<<"all pcliques:"<<endl;
+            cerr<<"all pcliques:"<<endl;
             vector<WEDS> allpcliques;
             for(int i=0;i<fixlenAns.size();++i){
                 vector<int> cliquenodes;
@@ -110,13 +121,7 @@ int main(){
             }
             sort(allpcliques.begin(),allpcliques.end());
 
-            for(int i=0;i<allpcliques.size();++i){
-                for(int j=0;j<allpcliques[i].timeList.size();++j){
-                    cout<<allpcliques[i].timeList[j];
-                    if(j!=allpcliques[i].timeList.size()-1) cout<<" ";
-                }
-                cout<<endl;
-            }
+            simpleOutput(allpcliques);
             #endif
             return 0;
         }
@@ -129,8 +134,8 @@ int main(){
             tgraph.computefixLenPkcores(kval,pcores);
             gettimeofday(&end,NULL);
 
-            cout<<"total time: "<<(end.tv_sec-astart.tv_sec)*1000+(end.tv_usec-astart.tv_usec)/1000<<endl;
-            cout<<"total result: "<<pcores.size()<<endl;
+            cerr<<"total time: "<<(end.tv_sec-astart.tv_sec)*1000+(end.tv_usec-astart.tv_usec)/1000<<endl;
+            cerr<<"total result: "<<pcores.size()<<endl;
 
             #ifdef outputans
             vector<WEDS> printans;
@@ -148,13 +153,7 @@ int main(){
 
             sort(printans.begin(),printans.end());
 
-            for(int i=0;i<printans.size();++i){
-                for(int j=0;j<printans[i].timeList.size();++j){
-                    cout<<printans[i].timeList[j];
-                    if(j!=printans[i].timeList.size()-1) cout<<" ";
-                }
-                if(i!=printans.size()-1) cout<<endl;
-            }
+            simpleOutput(printans);
             #endif
 
             return 0;
@@ -167,8 +166,8 @@ int main(){
             tgraph.MPCO_direct_1(kval,sigma,percent,pcores);
             gettimeofday(&end,NULL);
 
-            cout<<"total time: "<<(end.tv_sec-start.tv_sec)*1000+(end.tv_usec-start.tv_usec)/1000<<endl;
-            cout<<"total result: "<<pcores.size()<<endl;
+            cerr<<"total time: "<<(end.tv_sec-start.tv_sec)*1000+(end.tv_usec-start.tv_usec)/1000<<endl;
+            cerr<<"total result: "<<pcores.size()<<endl;
 
             #ifdef outputans
             vector<WEDS> printans;
@@ -186,13 +185,7 @@ int main(){
 
             sort(printans.begin(),printans.end());
 
-            for(int i=0;i<printans.size();++i){
-                for(int j=0;j<printans[i].timeList.size();++j){
-                    cout<<printans[i].timeList[j];
-                    if(j!=printans[i].timeList.size()-1) cout<<" ";
-                }
-                if(i!=printans.size()-1) cout<<endl;
-            }
+            simpleOutput(printans);
             #endif
 
             return 0;
