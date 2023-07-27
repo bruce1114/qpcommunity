@@ -1,0 +1,69 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+\let\Bbbk\relax
+\usepackage{amsmath,amssymb,amsfonts,amsthm,xspace}
+\usepackage[linesnumbered,ruled,vlined]{algorithm2e}
+\usepackage{algorithmic}
+\usepackage{graphicx,subfigure,stfloats}
+\usepackage{epstopdf}
+\usepackage{textcomp}
+\usepackage{ragged2e, xcolor}
+\usepackage{balance}
+\usepackage{verbatim}
+\usepackage{enumitem}
+\usepackage{makecell}
+\usepackage{url}
+\usepackage{booktabs}
+\usepackage{multicol}
+\usepackage{multirow}
+\usepackage{todonotes}
+
+\include{command}
+
+\newcommand{\mineaps}{Algorithm 1\xspace}
+\newcommand{\subqpslimit}{Theorem 1\xspace}
+\newcommand{\buildoracle}{Algorithm 2\xspace}
+\newcommand{\mineapsoracle}{Algorithm 3\xspace}
+\newcommand{\mqpcore}{Algorithm 4\xspace}
+\newcommand{\defconnectedlocalperiodic}{Definition 9\xspace}
+\newcommand{\mqpclique}{Algorithm 5\xspace}
+\newcommand{\mqpcorecorrect}{Theorem 7\xspace}
+\newcommand{\citetomitaworst}{[8]\xspace}
+
+\begin{document}
+	\title{Mining Quasi-Periodic Communities in Temporal Network (Missing Proves)}
+	\maketitle
+	
+	\stitle{Proof of Theorem 2.} For each iteration in line~2 of \mineaps, the size of $ candSet $ is smaller than the number of \qptss of length from $ 2 $ to $ \sigma-1 $ in sub-sequence $ (\ts[0],\ts[1],...,\ts[i-1]) $. Based on \subqpslimit, $ |candSet| $ for any $ i $ is smaller than $ \sum_{j=2}^{\sigma-1}\ts[i-1]^2 (\ts[i-1] \epsilon+1)^{j-1}\leq \ts_{max}^2\sum_{j=2}^{\sigma-1}(\ts_{max}\epsilon+1)^{j-1} <\ts_{max}^2 \frac{(\ts_{max}\epsilon+1)^{\sigma-1}}{\ts_{max}\epsilon}$. So the time complexity of \mineaps is $ O(\ts_{max}^3(\ts_{max}\epsilon+1)^{\sigma-2}) $.
+	
+	In \mineaps, $ \qpts $ and $ candSet $ dominate the overall space complexity. $ \qpts $ is the set of all \qptss of length $ \sigma $ in $ \ts $, so $ |\qpts| $ is not greater than $ \ts_{max}^2(\ts_{max}\epsilon+1)^{\sigma-1} $. Recall that $ |candSet|<\ts_{max}^2 \frac{(\ts_{max}\epsilon+1)^{\sigma-1}}{\ts_{max}\epsilon} $, the space complexity of \mineaps is $ O(\sigma(|\qpts|+|candSet|))=O(\ts_{max}^2(\ts_{max}\epsilon+1)^{\sigma-1}) $.
+	
+	\stitle{Proof of Theorem 3.} For (1), since $ D_{min}^{\ts'} $ is the smallest value in $ D^{\ts'} $ and $ \ts'\subseteq \ts $, there must be a DAG $ DAG_{D_{min}^{\ts'}}\in \DAGr $. Since $ \ts' $ is an $ (\epsilon,\sigma) $-\qpts, we have $ D_{min}^{\ts'}\leq \ts'[i]-\ts'[i-1] \leq D_{min}^{\ts'}(\epsilon+1) $ and $ (\ts'[i-1],\ts'[i])\in DAG_{D_{min}^{\ts'}} $ for $ i=1,...,\sigma-1 $. So $ \ts' $ is a path of length $ \sigma $ in $ DAG_{D_{min}^{\ts'}} $.
+	
+	For (2), it is clear that $ u_i\in \ts, i=1,2,...,\sigma $ and $ d\leq u_{i+1}-u_i\leq d(1+\epsilon),i=1,2,...,\sigma-1 $, so $ p $ is an $ (\epsilon,\sigma) $-\qpts in $ \ts $.
+	
+	\stitle{Proof of Theorem 4.} In \buildoracle, there are at most $ |\ts|^2 $ iterations in line~2-3. In line~5, there are at most $ \frac{\ts_{max}\epsilon}{\epsilon+1}+1 $ iterations. As a result, the time complexity of \buildoracle is $ O(|\ts|^2(\frac{\ts_{max}\epsilon}{\epsilon+1}+1)) $.
+	
+	Since there are at most $ |\ts| $ items in each $ DAG_d $ and $|D^{\ts}|<\ts_{max}$, so the space complexity of \buildoracle is $ O(|\ts|\ts_{max}) $.
+	
+	\stitle{Proof of Theorem 5.} In line~2 of \mineapsoracle, there are at most $ \ts_{max} $ different $ DAG_d $. In line~3, to reverse a DAG the algorithm needs to traverse the DAG, which needs at most $ |\ts|(d\epsilon+1) $ operations. The algorithm also needs to traverse $ DAG $ and $ \overline{DAG} $ in line~5-8. In line~9, there are at most $ |\ts| $ key edges. In line~12, the algorithm needs to enumerate $ pre $ for at most $ \sigma-1 $ times. In line~13-18, there are three tasks: conducting \kw{hDFS} on $ DAG $ and $ \overline{DAG} $ (line~17, line~16), splicing paths of two directions (line~18). \kw{hDFS} searches for all paths of length $ leftLen $ starting from $ start $ and the number of such paths is at most $ (d\epsilon+1)^{leftLen-1} $. With the help of $ maxLen $ and $ \overline{maxLen} $, \kw{hDFS} never visits vertices where no path of required length starts. For each single path of required length and for each vertex $ u $ on the path, \kw{hDFS} traverses all $ (d\epsilon+1) $ neighbors of $ u $ in the worst case to find the next vertex of the path, so the time complexity of finding a single path is $ (d\epsilon+1)(leftLen-1) $. In line~18, the time complexity of splicing paths of two directions is $ \sigma|preAns||postAns|=\sigma(d\epsilon+1)^{\sigma-2} $. Overall, since $ leftLen\leq \sigma-1 $, the time complexity of line~13-18 is $ O(2(\sigma-2)(d\epsilon+1)^{\sigma-1}+\sigma(d\epsilon+1)^{\sigma-2}) $. In \kw{DeleteKeyEdge}, if $\overline{maxLen}[curNode]$ is given $ longest+1 $ and $ longest+1\geq \sigma-1 $ (line~40), then all successors of $ curNode $ in $ DAG $ do not need to be updated, so in the worst case, there are at most $ \sum_{i=1}^{\sigma-1}(d\epsilon+1)^{i-1}=\frac{(d\epsilon+1)^{\sigma-1}-1}{d\epsilon} $ nodes being visited in each call to \kw{DeleteKeyEdge}, and all their direct successors in $\overline{DAG}$ should also be visited. As a result, the time complexity of \kw{DeleteKeyEdge} is $ O((d\epsilon+1)\frac{(d\epsilon+1)^{\sigma-1}-1}{d\epsilon}) $. Overall, since $ d<\ts_{max} $, the time complexity of \mineapsoracle is $O\Bigg(\tsm\bigg(4|\ts|(\tsm\epsilon+1)+|\ts|\Big\{(\sigma-1)\big[2(\sigma-2)(\tsm\epsilon+1)^{\sigma-1}+\sigma(\tsm\epsilon+1)^{\sigma-2}\big]+(\tsm\epsilon+1)\frac{(\tsm\epsilon+1)^{\sigma-1}-1}{\tsm\epsilon}\Big\}\bigg)\Bigg)$, which can be abbreviated as $ O(\tsm^2(\tsm\epsilon+1)^{\sigma-1}) $.
+	
+	Clearly, the main space consumption of \mineapsoracle is caused by $ \DAGr $ and the set of \qptss $ \qpts $. As a result, the space complexity of \mineapsoracle is $ O(\tsm^2(\tsm\epsilon+1)^{\sigma-1}) $.
+	
+	\stitle{Proof of Theorem 6.} For any MQPCore $ \Cr=(C,\ts) $ and $ C=(V_C,E_C) $, suppose $ u\in V_C $, it is clear that for $ t\in \ts $, $ deg_{\snap_t}(u)\geq k $, so $ \ts\in \qptsset_u $. Let $ (G_S,\ts) $ be a $ \qpcsg_u $. If $ C\nsubseteq G_S $, then it is easy to construct a larger \qpcsg $ (G_S',\ts) $ that $ G_S\subset G_S' $, which breaks the precondition. So $ C\subseteq G_S $.
+	
+	\stitle{Proof of Theorem 7.} We first prove that any MQPCore can be enumerated by \mqpcore. For any MQPCore $ \Cr=(C,\ts) $, suppose $ C=(V_C,E_C) $, it is clear that $ C\subseteq G_c $ ($ G_c $ is defined in line~2 of \mqpcore). Before the vertex in $ V_C $ that will be traversed first in line~5 of \mqpcore is traversed, no vertex in $ V_C $ will be deleted, i.e., be added into $ X $ in line~14 and line~22 (since $ \forall v \in V_C, deg_{C}(v)\geq k $). For the first vertex $ u $ in $ V_C $ being traversed in line~5, $ \ts $ must be a sub-sequence of $ t_k(u) $, because $ u $ is in $ C $ and $ \Cr $ is a MQPCore on time sequence $ \ts $. As a result, $ \ts\in \qptsset_u $. In line~9 of \mqpcore, $ (\ts,u)\in L $ indicates that $ u $ has been visited as part of a $ \qpcsg_{u'} $ $ (G_{u'},\ts) $ ($ u' $ is a vertex which is traversed before $ u $). Clearly, $ C\subseteq G_{u'} $ because $ G_{u'} $ is a maximal connected subgraph according to \defconnectedlocalperiodic. As a result, $ \Cr=(C,\ts) $ can be generated in the second stage in traversing $ u' $. If $ (\ts,u)\notin L $ in line~9, then $ (G_u,\ts) $ ($ G_u $ is computed in line~10) is the $ \qpcsg_u $. So $ \Cr=(C,\ts) $ can be generated in the second stage in traversing $ u $.
+	
+	Next we prove that any tuple $ (C,\ts) $ generated by \mqpcore is a MQPCore in $ \Gr $. Let $ (C,\ts) $ be one of the connected $ k $-cores in line~12 of \mqpcore, and suppose $ (C,\ts) $ is not a MQPCore in $ \Gr $, there must be a MQPCore in $ \Gr $, $ (C',\ts) $, where $ C\subset C' $. Recall the previous proof, let the first vertex in $ C' $ being traversed in line~5 of \mqpcore is $ u' $, if $ (\ts,u')\in L $ in line~9, then some \qpcsg containing $ C' $ has being generated before, and for each vertex $ v $ in $ C' $, $ (\ts,v)$ has been recorded in $ L $ (line~11) and will be skipped later. So we can not obtain $ (C,\ts) $ but only $ (C',\ts) $, which contradicts the conditions before. It is the same that only $ (C',\ts) $ will be generated if $ (\ts,u')\notin L $.
+	
+	\stitle{Proof of Theorem 8.} In line~2, the time complexity of computing $ G_c $ is $ O(|V|+|E|) $, and $ |V_c|\leq |V|, |E_c|\leq |E| $. In line~5, the cost for sorting is $ O(|V|log(|V|)) $. In line~7, $ |t_k(u)|\leq |\ts|\leq \tsm $, and \kw{Compute\qptsset} is implemented using \kw{\qpts+}, so the total time complexity of \kw{Compute\qptsset} is $ O(|V|\tsm^2(\tsm\epsilon+1)^{\sigma-1}) $. According to \subqpslimit, the size of $ \qptsset_u $ (line~7) is smaller than $ \tsm^2(\tsm\epsilon+1)^{\sigma-1} $. For each $ \qptsx $ in line~8 and in the worst case, the total size of $ G_u $ is $ |V|+|E| $. In computing $ G_u $, the time complexity of checking whether $ \qptsx\subseteq \tss_{\Gr}((u',v')) $ in line~10 is $ O(|\qptsx|)=O(\sigma) $. Combining line~11-13 with the previous lines, the overall time complexity of line~8-13 is $ O(\tsm^2(\tsm\epsilon+1)^{\sigma-1}(|V|+|E|)) $. The total cost in line~14-22 is at most $ O(|V|+|E|) $. As a result, the complexity of \mqpcore is $ O(\tsm^2(\tsm\epsilon+1)^{\sigma-1}(|V|+|E|)) $.
+	
+	In \mqpcore, since $ |\qptsset_u|\leq \tsm^2(\tsm\epsilon+1)^{\sigma-1} $, $ L $ stores at most $ \tsm^2(\tsm\epsilon+1)^{\sigma-1}|V| $ tuples, so the space complexity of $ L $ is $ O(\tsm^2(\tsm\epsilon+1)^{\sigma-1}|V|) $. In the worst case, the total space consumed by all $ (C',qpt) $ in line~13 for the same $ qpt $ is $ |V|+|E| $, so the space complexity of $ \Mr $ is $ O(\tsm^2(\tsm\epsilon+1)^{\sigma-1}(|V|+|E|)) $. Together with space consumed by \kw{Compute\qptsset} and $ X,Q $, the space complexity of \mqpcore is $ O(\tsm^2(\tsm\epsilon+1)^{\sigma-1}(|V|+|E|)) $.
+	
+	\stitle{Proof of Theorem 10.} We first prove that any MQPClique can be enumerated by \mqpclique. For any MQPClique $ \Cr=(C,\ts) $ and $ C=(V_C,E_C) $, it is clear that $ C\subseteq G_c $. As in the proof of \mqpcorecorrect, suppose the first vertex in $ V_C $ being visited in line~5 is $ u $, no vertex in $ V_C $ will be deleted before $ u $ is visited. When $ u $ is visited, $ \ts\in (\epsilon,\sigma,k-1)$-$\qptsset_u $ since $ \Cr $ is a MQPClique on time sequence $ \ts $, so $ \ts $ will be traversed in line~8. In line~15, $ P $ represents the set of remaining vertices in $ QPNS_u $ excluding $ u $ on the pruned graph (pruning rule 1), and it serves as the candidate set for the \kw{BKPivot} procedure. As a result, $ \Cr $ can be enumerated by \kw{BKPivot}.
+	
+	Then we prove that any tuple $ \Cr=(C,\ts)\in \Mr $ (originally referred to as $ (R,qpt) $ in line~28) generated by \mqpclique is a MQPClique in $ \Gr $. Suppose $ \Cr $ is obtained in traversing $ u $, it is clear that $ \Cr $ is a quasi-periodic clique, because $ \Cr $ is enumerated in $ QPNS_u $. In line~28, $ X=\emptyset $ indicates that $ \Cr $ is also a maximal quasi-periodic clique, i.e., a MQPClique.
+	
+	\stitle{Proof of Theorem 11.} In \mqpclique, in the worst case we need to compute $ \qpnsg_u $ for each vertex $ u $ and each $ \qptsx\in \qptsset_u $. The total time complexity of the above process is $ O(|V|\tsm^2(\tsm\epsilon+1)^{\sigma-1}(|V|+|E|)) $.\comment{we need to check whether an edge $ e $ satisfies $ \qptsx\subseteq \tss_{\Gr}(e) $ in searching \qpnsg, as in line~12 and in \kw{BKPivot} (line~29-32). In the actual scenario, \qpnsg can be saved in memory at once so that edges do not need to be checked whenever they are traversed in \kw{BKPivot}. In the worst case, for each vertex $ u $ and each $ \qptsx\in \qptsset_u $ we need to traverse the entire de-temporal graph and check each edge in searching \qpnsg, so the total time complexity of the above progress is $ O(|V|\tsm^2(\tsm\epsilon+1)^{\sigma-1}(|V|+|E|)) $...... In the worst case, the above \qpnsg will be computed for each vertex $ u $ and each $ \qptsx\in \qptsset_u $.} The time complexity of enumerating maximal cliques in a static graph with vertex set $ V $ is $ O(3^{|V|/3}) $ \citetomitaworst. So the total time complexity of \kw{BKPivot} procedure is $ O(|V|\tsm^2(\tsm\epsilon+1)^{\sigma-1}3^{|V|/3}) $. Considering \kw{Compute\qptsset} in line~7 and the sorting in line~5, the total time complexity of \mqpclique is $ O(\tsm^2(\tsm\epsilon+1)^{\sigma-1}|V|3^{|V|/3}) $.
+	
+\end{document}
